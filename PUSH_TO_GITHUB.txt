@@ -1,0 +1,37 @@
+========================================
+🚀 COMMANDS TO PUSH TO GITHUB
+========================================
+
+STEP 1: Create Repository on GitHub
+------------------------------------
+1. Go to: https://github.com/new
+2. Repository name: django-voting-system
+3. Description: Django Voting System with analytics
+4. Choose: Public or Private
+5. DO NOT initialize with README/gitignore/license
+6. Click "Create repository"
+
+STEP 2: Connect and Push
+--------------------------
+Replace YOUR_USERNAME with your actual GitHub username:
+
+git remote add origin https://github.com/YOUR_USERNAME/django-voting-system.git
+
+git branch -M main
+
+git push -u origin main
+
+
+STEP 3: Alternative - SSH Method
+---------------------------------
+If you prefer SSH:
+
+git remote add origin git@github.com:YOUR_USERNAME/django-voting-system.git
+
+git push -u origin main
+
+
+========================================
+✅ DONE! Your code will be on GitHub
+========================================
+

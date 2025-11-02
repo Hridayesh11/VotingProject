@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 
+        Results page template for the Voting System.
+        Displays voting results with vote counts and percentages per candidate.
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Results - Voting System</title>
+    <style>
+        /* Modern, clean styling for the results page */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .stats-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats-summary h2 {
+            margin: 0;
+            font-size: 36px;
+        }
+        .stats-summary p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .results-table thead {
+            background: #f8f9fa;
+        }
+        .results-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .results-table td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .results-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        .candidate-name {
+            font-weight: 600;
+            color: #333;
+        }
+        .party {
+            color: #666;
+            font-size: 14px;
+        }
+        .vote-count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .percentage {
+            font-size: 16px;
+            color: #666;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .nav-links a, .nav-links button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .nav-links a:hover, .nav-links button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+        .export-btn {
+            background: #10b981 !important;
+        }
+        .export-btn:hover {
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+        .rank {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Voting Results</h1>
+        <p class="subtitle">Live election results and statistics</p>
+
+        <!-- Summary statistics -->
+        <div class="stats-summary">
+            <h2>{{ total_votes }}</h2>
+            <p>Total Votes Cast</p>
+        </div>
+
+        <!-- Results table -->
+        {% if candidate_votes %}
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Candidate</th>
+                    <th>Votes</th>
+                    <th>Percentage</th>
+                    <th>Visual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for candidate in candidate_votes %}
+                <tr>
+                    <td class="rank">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="candidate-name">{{ candidate.name }}</div>
+                        <div class="party">{{ candidate.party }}</div>
+                    </td>
+                    <td class="vote-count">{{ candidate.vote_count }}</td>
+                    <td class="percentage">{{ candidate.percentage }}%</td>
+                    <td>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: {{ candidate.percentage }}%;">
+                                {% if candidate.percentage > 5 %}{{ candidate.percentage }}%{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-results">
+            <p>No votes have been cast yet. Be the first to vote!</p>
+        </div>
+        {% endif %}
+
+        <!-- Navigation and actions -->
+        <div class="nav-links">
+            <a href="{% url 'home' %}">Cast a Vote</a>
+            <a href="{% url 'analytics' %}">View Analytics</a>
+            <form method="GET" action="{% url 'export_results' %}" style="display: inline;">
+                <button type="submit" class="export-btn">📥 Export CSV</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

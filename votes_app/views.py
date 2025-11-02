@@ -70,7 +70,7 @@ def vote(request):
         # Validate that required fields are present
         if not all([voter_uid, candidate_id]):
             messages.error(request, "Please provide all required information.")
-            return redirect('home')
+            return redirect('votes_app:home')
         
         try:
             # Get or create voter
@@ -82,7 +82,7 @@ def vote(request):
             # Check if voter has already voted
             if Vote.objects.filter(voter=voter).exists():
                 messages.warning(request, f"Voter {voter.name} has already cast their vote!")
-                return redirect('results')
+                return redirect('votes_app:results')
             
             # Get candidate
             candidate = get_object_or_404(Candidate, id=candidate_id)
@@ -91,14 +91,14 @@ def vote(request):
             Vote.objects.create(voter=voter, candidate=candidate)
             
             messages.success(request, f"Vote cast successfully for {candidate.name}!")
-            return redirect('results')
+            return redirect('votes_app:results')
             
         except Exception as e:
             messages.error(request, f"Error processing vote: {str(e)}")
-            return redirect('home')
+            return redirect('votes_app:home')
     
     # GET request - redirect to home
-    return redirect('home')
+    return redirect('votes_app:home')
 
 
 def results(request):

@@ -201,9 +201,9 @@
 
         <!-- Navigation and actions -->
         <div class="nav-links">
-            <a href="{% url 'home' %}">Cast a Vote</a>
-            <a href="{% url 'analytics' %}">View Analytics</a>
-            <form method="GET" action="{% url 'export_results' %}" style="display: inline;">
+            <a href="{% url 'votes_app:home' %}">Cast a Vote</a>
+            <a href="{% url 'votes_app:analytics' %}">View Analytics</a>
+            <form method="GET" action="{% url 'votes_app:export_results' %}" style="display: inline;">
                 <button type="submit" class="export-btn">📥 Export CSV</button>
             </form>
         </div>

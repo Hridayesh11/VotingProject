@@ -158,7 +158,7 @@
         {% endif %}
 
         <!-- Voting form -->
-        <form method="POST" action="{% url 'vote' %}">
+        <form method="POST" action="{% url 'votes_app:vote' %}">
             {% csrf_token %}
             
             <div class="form-group">
@@ -201,8 +201,8 @@
 
         <!-- Navigation links -->
         <div class="nav-links">
-            <a href="{% url 'results' %}">View Results</a>
-            <a href="{% url 'analytics' %}">Analytics</a>
+            <a href="{% url 'votes_app:results' %}">View Results</a>
+            <a href="{% url 'votes_app:analytics' %}">Analytics</a>
         </div>
     </div>
 </body>

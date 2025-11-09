@@ -29,8 +29,12 @@ urlpatterns = [
     # Analytics page with statistics and chart
     path('analytics/', views.analytics, name='analytics'),
     
-    # Chart generation endpoint (returns JSON with base64 image)
+    # Chart generation endpoints (returns JSON with base64 image)
     path('chart/', views.generate_chart, name='generate_chart'),
+    path('chart/pie/', views.generate_pie_chart, name='generate_pie_chart'),
+    path('chart/horizontal/', views.generate_horizontal_bar_chart, name='generate_horizontal_chart'),
+    path('chart/party/', views.generate_party_chart, name='generate_party_chart'),
+    path('chart/line/', views.generate_line_chart, name='generate_line_chart'),
     
     # CSV export endpoint
     path('export/', views.export_results, name='export_results'),

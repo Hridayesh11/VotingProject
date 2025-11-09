@@ -142,6 +142,35 @@
             color: #666;
             padding: 40px;
         }
+        .chart-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .chart-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .chart-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        .chart-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -169,6 +198,16 @@
         <!-- Chart section -->
         <div class="chart-section">
             <h2>Voting Results Visualization</h2>
+            
+            <!-- Chart type selector buttons -->
+            <div class="chart-buttons">
+                <button class="chart-btn active" data-chart-type="bar">Bar Chart</button>
+                <button class="chart-btn" data-chart-type="pie">Pie Chart</button>
+                <button class="chart-btn" data-chart-type="horizontal">Horizontal Bar</button>
+                <button class="chart-btn" data-chart-type="party">By Party</button>
+                <button class="chart-btn" data-chart-type="line">Line Chart</button>
+            </div>
+            
             <div class="chart-container">
                 <div class="loading" id="loading">Loading chart...</div>
             </div>
@@ -202,24 +241,56 @@
 
     <!-- JavaScript to load chart dynamically -->
     <script>
+        // Chart URL mappings
+        const chartUrls = {
+            'bar': '{% url "votes_app:generate_chart" %}',
+            'pie': '{% url "votes_app:generate_pie_chart" %}',
+            'horizontal': '{% url "votes_app:generate_horizontal_chart" %}',
+            'party': '{% url "votes_app:generate_party_chart" %}',
+            'line': '{% url "votes_app:generate_line_chart" %}'
+        };
+        
         // Function to load chart from Django view
-        async function loadChart() {
+        async function loadChart(chartType = 'bar') {
             try {
-                const response = await fetch('{% url "votes_app:generate_chart" %}');
+                // Update button states based on chart type
+                document.querySelectorAll('.chart-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.getAttribute('data-chart-type') === chartType) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                // Show loading state
+                const loadingElement = document.getElementById('loading');
+                loadingElement.innerHTML = 'Loading chart...';
+                
+                // Get the appropriate chart URL
+                const url = chartUrls[chartType] || chartUrls['bar'];
+                
+                // Fetch chart data
+                const response = await fetch(url);
                 const data = await response.json();
                 
                 // Display the chart image
-                const loadingElement = document.getElementById('loading');
-                loadingElement.innerHTML = `<img src="${data.image}" alt="Voting Chart">`;
+                loadingElement.innerHTML = `<img src="${data.image}" alt="Voting Chart - ${chartType}">`;
             } catch (error) {
                 console.error('Error loading chart:', error);
                 document.getElementById('loading').textContent = 'Error loading chart';
             }
         }
         
-        // Load chart when page loads
+        // Set active button on click and load chart
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const chartType = this.getAttribute('data-chart-type');
+                loadChart(chartType);
+            });
+        });
+        
+        // Load default chart when page loads
         {% if candidate_votes %}
-        loadChart();
+        loadChart('bar');
         {% endif %}
     </script>
 </body>

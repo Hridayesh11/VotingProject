@@ -7,7 +7,11 @@ This module contains all view functions:
 - results: Display voting results
 - analytics: Display statistics and charts
 - export_results: Export votes to CSV
-- generate_chart: Generate matplotlib chart dynamically
+- generate_chart: Generate matplotlib bar chart dynamically
+- generate_pie_chart: Generate pie chart showing vote distribution
+- generate_horizontal_bar_chart: Generate horizontal bar chart
+- generate_party_chart: Generate bar chart grouped by political party
+- generate_line_chart: Generate line chart showing voting trends over time
 """
 
 import io
@@ -250,4 +254,293 @@ def generate_chart(request):
     plt.close(fig)
     
     # Return JSON response with base64 image
+    return JsonResponse({'image': f'data:image/png;base64,{image_base64}'})
+
+
+def generate_pie_chart(request):
+    """
+    Generate a matplotlib pie chart showing vote distribution.
+    
+    Creates a pie chart showing percentage of votes per candidate.
+    """
+    # Get vote counts per candidate
+    candidate_votes = (
+        Candidate.objects
+        .annotate(vote_count=Count('votes'))
+        .filter(vote_count__gt=0)  # Only show candidates with votes
+        .order_by('-vote_count')
+    )
+    
+    if not candidate_votes:
+        # Return empty chart if no votes
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.text(0.5, 0.5, 'No votes yet', ha='center', va='center', fontsize=16)
+        ax.axis('off')
+    else:
+        # Prepare data for plotting
+        candidates = [cv.name for cv in candidate_votes]
+        votes = [cv.vote_count for cv in candidate_votes]
+        
+        # Create pie chart
+        fig, ax = plt.subplots(figsize=(10, 8))
+        colors = plt.cm.Set3(range(len(candidates)))
+        
+        wedges, texts, autotexts = ax.pie(
+            votes, 
+            labels=candidates, 
+            autopct='%1.1f%%',
+            colors=colors,
+            startangle=90,
+            textprops={'fontsize': 10, 'fontweight': 'bold'}
+        )
+        
+        # Customize title
+        ax.set_title('Vote Distribution by Candidate', fontsize=14, fontweight='bold', pad=20)
+        
+        # Make percentage text more visible
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+    
+    plt.tight_layout()
+    
+    # Save plot to BytesIO buffer
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+    buffer.seek(0)
+    
+    # Encode image to base64
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close(fig)
+    
+    return JsonResponse({'image': f'data:image/png;base64,{image_base64}'})
+
+
+def generate_horizontal_bar_chart(request):
+    """
+    Generate a horizontal bar chart showing votes per candidate.
+    
+    Creates a horizontal bar chart for better readability with many candidates.
+    """
+    # Get vote counts per candidate
+    candidate_votes = (
+        Candidate.objects
+        .annotate(vote_count=Count('votes'))
+        .order_by('-vote_count', 'name')
+    )
+    
+    # Prepare data for plotting
+    candidates = [cv.name for cv in candidate_votes]
+    votes = [cv.vote_count for cv in candidate_votes]
+    
+    # Create matplotlib figure and axis
+    fig, ax = plt.subplots(figsize=(10, max(6, len(candidates) * 0.5)))
+    
+    # Create horizontal bar chart
+    bars = ax.barh(candidates, votes, color='lightcoral', edgecolor='darkred', alpha=0.7)
+    
+    # Customize chart
+    ax.set_xlabel('Number of Votes', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Candidates', fontsize=12, fontweight='bold')
+    ax.set_title('Voting Results - Horizontal Bar Chart', fontsize=14, fontweight='bold')
+    ax.grid(axis='x', alpha=0.3, linestyle='--')
+    
+    # Add value labels on bars
+    for i, bar in enumerate(bars):
+        width = bar.get_width()
+        ax.text(width, bar.get_y() + bar.get_height() / 2.,
+                f' {int(width)}', ha='left', va='center', fontweight='bold')
+    
+    plt.tight_layout()
+    
+    # Save plot to BytesIO buffer
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+    buffer.seek(0)
+    
+    # Encode image to base64
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close(fig)
+    
+    return JsonResponse({'image': f'data:image/png;base64,{image_base64}'})
+
+
+def generate_party_chart(request):
+    """
+    Generate a bar chart showing votes grouped by political party.
+    
+    Creates a chart showing total votes per party.
+    """
+    # Get vote counts grouped by party
+    from django.db.models import Sum
+    party_votes = (
+        Candidate.objects
+        .annotate(vote_count=Count('votes'))
+        .values('party')
+        .annotate(total_votes=Sum('vote_count'))
+        .order_by('-total_votes')
+    )
+    
+    if not party_votes:
+        # Return empty chart if no votes
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.text(0.5, 0.5, 'No votes yet', ha='center', va='center', fontsize=16)
+        ax.axis('off')
+    else:
+        # Prepare data for plotting
+        parties = [pv['party'] for pv in party_votes]
+        votes = [pv['total_votes'] for pv in party_votes]
+        
+        # Create matplotlib figure and axis
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create bar chart with different colors for each party
+        colors = plt.cm.Pastel1(range(len(parties)))
+        bars = ax.bar(parties, votes, color=colors, edgecolor='black', alpha=0.8)
+        
+        # Customize chart
+        ax.set_xlabel('Political Party', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Total Votes', fontsize=12, fontweight='bold')
+        ax.set_title('Voting Results by Political Party', fontsize=14, fontweight='bold')
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        
+        # Rotate x-axis labels for better readability
+        plt.xticks(rotation=45, ha='right')
+        
+        # Add value labels on bars
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2., height,
+                    f'{int(height)}', ha='center', va='bottom', fontweight='bold')
+    
+    plt.tight_layout()
+    
+    # Save plot to BytesIO buffer
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+    buffer.seek(0)
+    
+    # Encode image to base64
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close(fig)
+    
+    return JsonResponse({'image': f'data:image/png;base64,{image_base64}'})
+
+
+def generate_line_chart(request):
+    """
+    Generate a line chart showing voting trends over time.
+    
+    Creates a line chart showing votes cast over time or vote distribution by candidate.
+    """
+    # Get all votes ordered by timestamp
+    votes = Vote.objects.select_related('candidate').order_by('timestamp')
+    
+    if votes.exists():
+        # Create time series data - group by date
+        from django.db.models import Count
+        from django.db.models.functions import TruncDate
+        
+        try:
+            # Try to group by date for time series
+            votes_by_date = (
+                votes
+                .annotate(date=TruncDate('timestamp'))
+                .values('date')
+                .annotate(vote_count=Count('id'))
+                .order_by('date')
+            )
+            
+            if votes_by_date.count() > 1:
+                # Plot time-based data
+                dates = [str(vb['date']) for vb in votes_by_date]
+                vote_counts = [vb['vote_count'] for vb in votes_by_date]
+                
+                fig, ax = plt.subplots(figsize=(12, 6))
+                ax.plot(dates, vote_counts, marker='o', linewidth=2, markersize=8, color='green')
+                ax.fill_between(dates, vote_counts, alpha=0.3, color='green')
+                ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+                ax.set_ylabel('Votes Cast', fontsize=12, fontweight='bold')
+                ax.set_title('Voting Trends Over Time', fontsize=14, fontweight='bold')
+                ax.grid(True, alpha=0.3, linestyle='--')
+                plt.xticks(rotation=45, ha='right')
+            else:
+                # Fallback to candidate distribution
+                candidate_votes = (
+                    Candidate.objects
+                    .annotate(vote_count=Count('votes'))
+                    .filter(vote_count__gt=0)
+                    .order_by('-vote_count', 'name')
+                )
+                
+                if candidate_votes:
+                    candidates = [cv.name for cv in candidate_votes]
+                    vote_counts = [cv.vote_count for cv in candidate_votes]
+                    
+                    fig, ax = plt.subplots(figsize=(12, 6))
+                    x_pos = range(len(candidates))
+                    ax.plot(x_pos, vote_counts, marker='o', linewidth=2, markersize=8, color='steelblue')
+                    ax.fill_between(x_pos, vote_counts, alpha=0.3, color='steelblue')
+                    ax.set_xticks(x_pos)
+                    ax.set_xticklabels(candidates, rotation=45, ha='right')
+                    ax.set_xlabel('Candidates', fontsize=12, fontweight='bold')
+                    ax.set_ylabel('Number of Votes', fontsize=12, fontweight='bold')
+                    ax.set_title('Vote Distribution - Line Chart', fontsize=14, fontweight='bold')
+                    ax.grid(True, alpha=0.3, linestyle='--')
+                    
+                    # Add value labels
+                    for i, vote in enumerate(vote_counts):
+                        ax.text(i, vote, f' {int(vote)}', ha='left', va='bottom', fontweight='bold')
+                else:
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    ax.text(0.5, 0.5, 'No votes yet', ha='center', va='center', fontsize=16)
+                    ax.axis('off')
+        except Exception:
+            # Fallback to candidate distribution if time grouping fails
+            candidate_votes = (
+                Candidate.objects
+                .annotate(vote_count=Count('votes'))
+                .filter(vote_count__gt=0)
+                .order_by('-vote_count', 'name')
+            )
+            
+            if candidate_votes:
+                candidates = [cv.name for cv in candidate_votes]
+                vote_counts = [cv.vote_count for cv in candidate_votes]
+                
+                fig, ax = plt.subplots(figsize=(12, 6))
+                x_pos = range(len(candidates))
+                ax.plot(x_pos, vote_counts, marker='o', linewidth=2, markersize=8, color='steelblue')
+                ax.fill_between(x_pos, vote_counts, alpha=0.3, color='steelblue')
+                ax.set_xticks(x_pos)
+                ax.set_xticklabels(candidates, rotation=45, ha='right')
+                ax.set_xlabel('Candidates', fontsize=12, fontweight='bold')
+                ax.set_ylabel('Number of Votes', fontsize=12, fontweight='bold')
+                ax.set_title('Vote Distribution - Line Chart', fontsize=14, fontweight='bold')
+                ax.grid(True, alpha=0.3, linestyle='--')
+                
+                # Add value labels
+                for i, vote in enumerate(vote_counts):
+                    ax.text(i, vote, f' {int(vote)}', ha='left', va='bottom', fontweight='bold')
+            else:
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.text(0.5, 0.5, 'No votes yet', ha='center', va='center', fontsize=16)
+                ax.axis('off')
+    else:
+        # No votes at all
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.text(0.5, 0.5, 'No votes yet', ha='center', va='center', fontsize=16)
+        ax.axis('off')
+    
+    plt.tight_layout()
+    
+    # Save plot to BytesIO buffer
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+    buffer.seek(0)
+    
+    # Encode image to base64
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close(fig)
+    
     return JsonResponse({'image': f'data:image/png;base64,{image_base64}'})
